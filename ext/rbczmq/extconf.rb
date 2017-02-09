@@ -83,7 +83,7 @@ when /darwin/
   CONFIG['LDSHARED'] = "$(CXX) " + CONFIG['LDSHARED'].split[1..-1].join(' ')
 
 when /aix/
-  CONFIG['LDSHARED'] = "$(CXX) -shared -Wl,-G -Wl,-brtl"
+  CONFIG['LDSHARED'] = "$(CXX) -qmkshobj -Wl,-G -Wl,-brtl"
 
 when /linux/
   CZMQ_CFLAGS << "-fPIC"
@@ -159,8 +159,15 @@ fail "Error compiling and linking libczmq" unless have_library("czmq")
 
 $defs << "-pedantic"
 
-$CFLAGS  << ' -Wall -funroll-loops'
-$CFLAGS  << ' -Wextra -O0 -ggdb3' if ENV['DEBUG']
-$LDFLAGS << " -Wl,-rpath,ext/rbczmq/dst/lib/"
+case RUBY_PLATFORM
+when /aix/
+  $CFLAGS  << ' -qunroll=yes'
+  $CFLAGS  << ' -O0 -g' if ENV['DEBUG']
+  $LDFLAGS << " -Wl,-L,ext/rbczmq/dst/lib/"
+else
+  $CFLAGS  << ' -Wall -funroll-loops'
+  $CFLAGS  << ' -Wextra -O0 -ggdb3' if ENV['DEBUG']
+  $LDFLAGS << " -Wl,-rpath,ext/rbczmq/dst/lib/"
+end
 
 create_makefile('rbczmq_ext')
